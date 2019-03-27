@@ -17,24 +17,11 @@ data = pd.read_json(path)
 
 pathZipCW = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/zipZctaCrosswalk.csv')
 zipCW = pd.read_csv(pathZipCW, engine='python').rename(columns = {'ZIP_CODE' : 'zip code'})
-
 withZip = joinZip(data, zipCW)
-
-pathIncome = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/medianIncomeOnly.csv')
-income = pd.read_csv(pathIncome, engine='python').rename(columns = {'GEO.id2' : 'ZCTA',
-                                                                    'HC01_EST_VC13' : 'median income'})
-
-withIncome = joinData(withZip, income).fillna(0)
-
-pathHousing = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/medianHousingOnly.csv')
-housing = pd.read_csv(pathHousing, engine='python').rename(columns = {'GEO.id2' : 'ZCTA',
-                                                                    'HD01_VD01' : 'median housing'})
-
-withHousing = joinData(withIncome, housing).fillna(0)
 
 pathHousing = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/popData.csv')
 population = pd.read_csv(pathHousing, engine='python').rename(columns = {'GEO.id2' : 'ZCTA'})
-withPopulation = joinData(withHousing, population).fillna(0)
+withPopulation = joinData(withZip, population).fillna(0)
 
 ### Determine frequency of brewery counts per ZCTA/State
 zipTotals = withPopulation[['ZCTA', 'city', 'popDrinking', 'brewery size']].groupby('ZCTA').agg({'brewery size':'count',
@@ -42,8 +29,31 @@ zipTotals = withPopulation[['ZCTA', 'city', 'popDrinking', 'brewery size']].grou
 zipTotals['BpC'] = zipTotals['brewery count']/zipTotals['popDrinking']
 zipTotals=zipTotals.replace(np.inf, 0).reset_index()
 zipTotals['ZCTA'] = zipTotals.astype({'ZCTA': 'float'}).astype({'ZCTA':'int'})
-zipByCount = joinData(zipCW, zipTotals)[['STATE', 'ZCTA', 'brewery count', 'popDrinking', 'BpC']].fillna(0).sort_values('STATE')
+zipByCount = joinData(zipCW, zipTotals)[['PO_NAME', 'STATE', 'ZCTA', 'brewery count', 'popDrinking', 'BpC']].fillna(0).sort_values('STATE')
 zipByCount = zipByCount.drop_duplicates().reset_index()
+
+#print(zipByCount[zipByCount['popDrinking']>10000].sort_values('BpC').head(5)) For determining top/bottom performers
+
+### Add spending power data
+pathIncome = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/medianIncomeOnly.csv')
+income = pd.read_csv(pathIncome, engine='python').rename(columns = {'GEO.id2' : 'ZCTA',
+                                                                    'HC01_EST_VC13' : 'median income'})
+
+withIncome = joinData(zipByCount, income).fillna(0)
+
+pathHousing = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/medianHousingOnly.csv')
+housing = pd.read_csv(pathHousing, engine='python').rename(columns = {'GEO.id2' : 'ZCTA',
+                                                                    'HD01_VD01' : 'median housing'})
+
+withHousing = joinData(withIncome, housing).fillna(0)
+withHousing['median housing'] = withHousing['median housing']*12
+
+### TO DO: BREWERY DENSITY
+# if BpC = 0, "Zero"
+# if BpC < Nonzero BpC.Quartile[.25], "Low"
+# if BpC > Low and < Nonzero BpC.quartile[.75], "Average",
+# else "High"
+
 sns.set_style("darkgrid")
 
 #f, statePlots = plt.subplots(8, 7,figsize=(48,27))
