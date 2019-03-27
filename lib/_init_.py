@@ -24,13 +24,15 @@ population = pd.read_csv(pathHousing, engine='python').rename(columns = {'GEO.id
 withPopulation = joinData(withZip, population).fillna(0)
 
 ### Determine frequency of brewery counts per ZCTA/State
-zipTotals = withPopulation[['ZCTA', 'city', 'popDrinking', 'brewery size']].groupby('ZCTA').agg({'brewery size':'count',
-                          'popDrinking': 'mean'}).rename(index=str, columns={'brewery size': 'brewery count'})
+zipTotals = withPopulation[['ZCTA', 'city', 'popDrinking', 'brewery size']].groupby('ZCTA').agg(
+        {'brewery size':'count', 'popDrinking': 'mean'}
+        ).rename(index=str, columns={'brewery size': 'brewery count'})
 zipTotals['BpC'] = zipTotals['brewery count']/zipTotals['popDrinking']
 zipTotals=zipTotals.replace(np.inf, 0).reset_index()
 zipTotals['ZCTA'] = zipTotals.astype({'ZCTA': 'float'}).astype({'ZCTA':'int'})
-zipByCount = joinData(zipCW, zipTotals)[['PO_NAME', 'STATE', 'ZCTA', 'brewery count', 'popDrinking', 'BpC']].fillna(0).sort_values('STATE')
-zipByCount = zipByCount.drop_duplicates().reset_index()
+zipByCount = joinData(zipCW, zipTotals)[['PO_NAME', 'STATE',
+                     'ZCTA', 'brewery count', 'popDrinking', 'BpC']].fillna(0).sort_values('STATE')
+zipByCount = zipByCount.drop_duplicates(subset='ZCTA').reset_index()
 
 #print(zipByCount[zipByCount['popDrinking']>10000].sort_values('BpC').head(5)) For determining top/bottom performers
 
@@ -47,6 +49,13 @@ housing = pd.read_csv(pathHousing, engine='python').rename(columns = {'GEO.id2' 
 
 withHousing = joinData(withIncome, housing).fillna(0)
 withHousing['median housing'] = withHousing['median housing']*12
+withHousing['purchase power'] = (withHousing['median income']-withHousing['median housing'])/(
+        pow(withHousing['median housing'],.463)
+        )
+print(withHousing[withHousing['popDrinking']>10000].sort_values(
+        'purchase power')[['PO_NAME', 'STATE', 'ZCTA', 'median income', 
+    'median housing', 'purchase power']].head(20)
+    )
 
 ### TO DO: BREWERY DENSITY
 # if BpC = 0, "Zero"
