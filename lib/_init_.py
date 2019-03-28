@@ -3,8 +3,8 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import os
-import math
 from tableCreation import joinZip, joinData
+from dataPlayground import getZip, getCity, groupCities
 
 ### Init
 
@@ -75,13 +75,17 @@ impInfo = withHousing[['PO_NAME', 'STATE', 'ZCTA', 'popDrinking', 'brewery_count
                        'purchase_power', 'brewery_capacity', 'carrying_cap_ratio', 'share_market_cap', 'split_market_cap']].fillna(0).replace(np.inf,0)
 
 
-zipCheck = 55347
-x = impInfo[impInfo['ZCTA']==zipCheck].split_market_cap.item()
+#getCity("Houston", "TX", impInfo)
+#getZip(28277, impInfo)
+
+#tC = groupCities(impInfo)
+#print(tC.sort_values('share_market_cap').tail())
+#print(tC.sort_values('split_market_cap').tail())
+
+
+
 #impInfo=impInfo[impInfo['brewery_capacity']>impInfo.brewery_count.astype(int)] #remove any city that has already hit their carrying capacity
 
-print(impInfo[impInfo['ZCTA']==zipCheck])
-print(impInfo[impInfo['share_market_cap']>x]['share_market_cap'].size)
-print(impInfo[impInfo['split_market_cap']>x]['split_market_cap'].size)
 
 #j=[]
 #for i in range(0,withHousing.iloc[2465]['brewery_capacity']+5):
@@ -111,5 +115,7 @@ sns.set_style("darkgrid")
 #sns.distplot(countHist, kde=False, bins=range(0,10), norm_hist=True).set(xlim=(0,10),ylim=(0,1))
 #plt.title("United States")
 
+
+    
 
 
