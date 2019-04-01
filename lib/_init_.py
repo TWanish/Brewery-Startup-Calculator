@@ -27,6 +27,10 @@ pathHousing = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/popData.c
 population = pd.read_csv(pathHousing, engine='python').rename(columns = {'GEO.id2' : 'ZCTA'})
 withPopulation = joinData(withZip, population).fillna(0)
 
+pathLand = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/geoDataZCTA.csv')
+landData = pd.read_csv(pathLand, engine='python').rename(columns = {'GEOID' : 'ZCTA',
+                                                                      'ALAND_SQMI' : 'land_area_sqmi'})
+
 ### Determine frequency of brewery counts per ZCTA/State
 
 zipTotals = withPopulation[['ZCTA', 'popDrinking', 'brewery size']].groupby('ZCTA').agg(
@@ -55,30 +59,37 @@ housing = pd.read_csv(pathHousing, engine='python').rename(columns = {'GEO.id2' 
                                                                     'HD01_VD01' : 'median_housing'})
 
 ### Determine best location 
-withHousing = joinData(withIncome, housing).fillna(0)
+withLand = joinData(withIncome, landData[['ZCTA', 'land_area_sqmi']]).fillna(0) #Join here to not lose data
+withHousing = joinData(withLand, housing).fillna(0) #Join here to not lose data
+withHousing['brewery_density']=withHousing['brewery_count']/withHousing['land_area_sqmi']
 withHousing['median_housing'] = withHousing['median_housing']*12
 withHousing['purchase_power'] = (withHousing['median_income']-withHousing['median_housing'])/(
         pow(withHousing['median_housing'],.463)
         )
 withHousing['prod_capacity']=withHousing['popDrinking']*0.838 #assume .838bbl consumption yearly https://www.usatoday.com/story/money/personalfinance/2018/05/02/which-states-residents-drink-most-beer/569430002/
 withHousing['brewery_capacity']=withHousing['prod_capacity']/1000 #assume 1000bbl production yearly https://www.brewbound.com/news/beer-business-finance-breaking-down-the-taproom-focused-brewery-model
-withHousing['brewery_capacity']=(withHousing['brewery_capacity']*.2).astype(int) #assume 12.7% of beer consumed in an area is craft https://www.brewersassociation.org/statistics/national-beer-sales-production-data/
+withHousing['brewery_capacity']=(withHousing['brewery_capacity']*.127).astype(int) #assume 12.7% of beer consumed in an area is craft https://www.brewersassociation.org/statistics/national-beer-sales-production-data/
 withHousing['tot_market_cap']=withHousing['purchase_power']*withHousing['popDrinking']
 withHousing['carrying_cap_ratio']=withHousing['brewery_capacity']/(
-        1+((withHousing['brewery_capacity']-(withHousing['brewery_count']+1))/(withHousing['brewery_count']+1))
+        1+((withHousing['brewery_capacity']-(withHousing['brewery_count']+1))/(
+                withHousing['brewery_count']+1))
         *np.exp(-.5)) #from https://sites.math.northwestern.edu/~mlerma/courses/math214-2-04f/notes/c2-logist.pdf
-withHousing['carrying_cap_ratio']=(withHousing['brewery_capacity']-np.abs(withHousing['brewery_capacity']-withHousing['carrying_cap_ratio']))/withHousing['brewery_capacity']
+withHousing['carrying_cap_ratio']=(withHousing['brewery_capacity']-np.abs(
+        withHousing['brewery_capacity']-withHousing['carrying_cap_ratio']))/withHousing['brewery_capacity']
 withHousing['share_market_cap']=withHousing['tot_market_cap']*withHousing['carrying_cap_ratio']
-withHousing['split_market_cap']=withHousing['tot_market_cap']/(withHousing['brewery_count']+1)
+withHousing['split_market_cap']=withHousing['tot_market_cap']/(
+        withHousing['brewery_count']+1)
 
-impInfo = withHousing[['PO_NAME', 'STATE', 'ZCTA', 'popDrinking', 'brewery_count', 'median_income',
-                       'purchase_power', 'brewery_capacity', 'carrying_cap_ratio', 'share_market_cap', 'split_market_cap']].fillna(0).replace(np.inf,0)
+impInfo = withHousing[['PO_NAME', 'STATE', 'ZCTA', 'popDrinking', 'brewery_count', 
+                       'median_income', 'purchase_power', 'land_area_sqmi', 
+                       'brewery_capacity', 'carrying_cap_ratio', 'share_market_cap', 
+                       'split_market_cap']].fillna(0).replace(np.inf,0)
 
 
-#getCity("Houston", "TX", impInfo)
+getCity("Portland", "OR", impInfo)
 #getZip(28277, impInfo)
 
-#tC = groupCities(impInfo)
+tC = groupCities(impInfo).reset_index()
 #print(tC.sort_values('share_market_cap').tail())
 #print(tC.sort_values('split_market_cap').tail())
 
@@ -100,7 +111,6 @@ impInfo = withHousing[['PO_NAME', 'STATE', 'ZCTA', 'popDrinking', 'brewery_count
 # else "High"
 
 sns.set_style("darkgrid")
-
 #f, statePlots = plt.subplots(8, 7,figsize=(48,27))
 #for i, state in enumerate(zipByCount.STATE.unique()):
 #    stateData = zipByCount.loc[zipByCount['STATE']==state]

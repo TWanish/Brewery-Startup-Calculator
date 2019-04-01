@@ -17,14 +17,14 @@ def getCity(cityName, state, df):
     grouped = cityChoices.groupby('PO_NAME').agg({
             'STATE':'min', 'ZCTA':'max', 'brewery_count':'sum', 'popDrinking': 'sum',
             'median_income':'mean', 'purchase_power':'mean',
-            'brewery_capacity':'sum'})
+            'land_area_sqmi':'sum', 'brewery_capacity':'sum'})
     tC= groupCities(df)
     
     
     if grouped['STATE'].size==0:
         print ('We do not have any records on ' + cityName + ', ' + state)
     else:
-        
+        grouped['brewery_density']=grouped['brewery_count']/grouped['land_area_sqmi']
         grouped['tot_market_cap']=grouped['popDrinking']*grouped['purchase_power']
         grouped['carrying_cap_ratio']=grouped['brewery_capacity']/(
             1+((grouped['brewery_capacity']-(grouped['brewery_count']+1))/(grouped['brewery_count']+1)))
@@ -35,6 +35,9 @@ def getCity(cityName, state, df):
         grouped['split_market_cap']=grouped['tot_market_cap']/(grouped['brewery_count']+1)
         x = grouped.share_market_cap.item()
         y = grouped.split_market_cap.item()
+        grouped['share_rank']=tC[tC['share_market_cap']>x]['share_market_cap'].size
+        grouped['split_rank']=tC[tC['split_market_cap']>y]['split_market_cap'].size
+                
         print(grouped.head())
         print("Share: " + str(tC[tC['share_market_cap']>x]['share_market_cap'].size)+"/"+str(tC['share_market_cap'].size))
         print("Split: " + str(tC[tC['split_market_cap']>y]['split_market_cap'].size)+"/"+str(tC['split_market_cap'].size))
@@ -55,7 +58,8 @@ def groupCities(df):
     tC = df.groupby(['PO_NAME', 'STATE']).agg({
             'ZCTA':'max', 'brewery_count':'sum', 'popDrinking': 'sum',
             'median_income':'mean', 'purchase_power':'mean',
-            'brewery_capacity':'sum'})
+            'land_area_sqmi': 'sum', 'brewery_capacity':'sum'})
+    tC['brewery_density']=tC['brewery_count']/tC['land_area_sqmi']
     tC['tot_market_cap']=tC['popDrinking']*tC['purchase_power']
     tC['carrying_cap_ratio']=tC['brewery_capacity']/(
         1+((tC['brewery_capacity']-(tC['brewery_count']+1))/(tC['brewery_count']+1)))

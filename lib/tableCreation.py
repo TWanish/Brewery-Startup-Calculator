@@ -14,8 +14,8 @@ def joinZip(dataTable, zipCrosswalk):
                                                                  axis=1)
     return data
 
-def joinData(dataTable, incomeData):
-    data = pd.merge(dataTable, incomeData, how='left', on='ZCTA')
+def joinData(dataTable, otherData):
+    data = pd.merge(dataTable, otherData, how='left', on='ZCTA')
 
     return data
 
