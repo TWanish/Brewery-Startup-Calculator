@@ -2,12 +2,13 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import geopandas as gpd
 import os
 from tableCreation import joinZip, joinData
-from dataPlayground import getZip, getCity, groupCities
+from dataPlayground import getZip, getCity, groupCities, groupCounties
 
 ### Init
-
+pd.set_option('display.max_columns', 15)
 try:
     path = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/breweryData.json')
     path = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/breweryData.json')
@@ -22,6 +23,9 @@ zipCW['zip code'] = zipCW['zip code'].astype(str)
 withZip = joinZip(data, zipCW)
 withZip = withZip.dropna(axis=0, subset=['ZCTA'])
 withZip['ZCTA'] = withZip['ZCTA'].astype(int)
+pathCountyCW = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/zctaCountyCrosswalk.csv')
+countyCW = pd.read_csv(pathCountyCW, engine='python').rename(columns = {'zip' : 'ZCTA'}).reset_index().rename(index=str, columns={"index": "ZCTA", "ZCTA": "county"})
+
 
 pathHousing = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/popData.csv')
 population = pd.read_csv(pathHousing, engine='python').rename(columns = {'GEO.id2' : 'ZCTA'})
@@ -60,7 +64,9 @@ housing = pd.read_csv(pathHousing, engine='python').rename(columns = {'GEO.id2' 
 
 ### Determine best location 
 withLand = joinData(withIncome, landData[['ZCTA', 'land_area_sqmi']]).fillna(0) #Join here to not lose data
-withHousing = joinData(withLand, housing).fillna(0) #Join here to not lose data
+withCounty = joinData(withLand, countyCW).fillna(0)
+withCounty['county']= withCounty['county'].astype(int)
+withHousing = joinData(withCounty, housing).fillna(0) #Join here to not lose data
 withHousing['brewery_density']=withHousing['brewery_count']/withHousing['land_area_sqmi']
 withHousing['median_housing'] = withHousing['median_housing']*12
 withHousing['purchase_power'] = (withHousing['median_income']-withHousing['median_housing'])/(
@@ -80,52 +86,27 @@ withHousing['share_market_cap']=withHousing['tot_market_cap']*withHousing['carry
 withHousing['split_market_cap']=withHousing['tot_market_cap']/(
         withHousing['brewery_count']+1)
 
-impInfo = withHousing[['PO_NAME', 'STATE', 'ZCTA', 'popDrinking', 'brewery_count', 
+impInfo = withHousing[['PO_NAME', 'STATE', 'ZCTA', 'county', 'popDrinking', 'brewery_count', 
                        'median_income', 'purchase_power', 'land_area_sqmi', 
                        'brewery_capacity', 'carrying_cap_ratio', 'share_market_cap', 
                        'split_market_cap']].fillna(0).replace(np.inf,0)
 
 
-getCity("Portland", "OR", impInfo)
+
+getCity("Denver", "CO", impInfo)
 #getZip(28277, impInfo)
-
-tC = groupCities(impInfo).reset_index()
-#print(tC.sort_values('share_market_cap').tail())
+#print(impInfo.sort_values('share_market_cap').tail())
+#print(impInfo.sort_values('split_market_cap').tail())
+tC = groupCounties(impInfo).reset_index()
+tC['share_market_cap']=tC['share_market_cap'].astype(int)
+tC['split_market_cap']=tC['split_market_cap'].astype(int)
+tC['brewery_per_capita']=tC['brewery_count']/tC['popDrinking'].fillna(0).replace(np.inf,0)
+print(tC[tC['STATE']=='AK'].sort_values('brewery_per_capita').tail(25))
 #print(tC.sort_values('split_market_cap').tail())
-
+#tC.to_csv('countyData.csv')
 
 
 #impInfo=impInfo[impInfo['brewery_capacity']>impInfo.brewery_count.astype(int)] #remove any city that has already hit their carrying capacity
 
-
-#j=[]
-#for i in range(0,withHousing.iloc[2465]['brewery_capacity']+5):
-#    j.append((withHousing.iloc[2465]['brewery_capacity']/(1+((withHousing.iloc[2465]['brewery_capacity']-(i+1))/(
-#            i+1))*np.exp(-1)))/withHousing.iloc[2465]['brewery_capacity'])
-#plt.plot(range(0,withHousing.iloc[2465]['brewery_capacity']+5),j)
-
-### TO DO: BREWERY DENSITY
-# if BpC = 0, "Zero"
-# if BpC < Nonzero BpC.Quartile[.25], "Low"
-# if BpC > Low and < Nonzero BpC.quartile[.75], "Average",
-# else "High"
-
-sns.set_style("darkgrid")
-#f, statePlots = plt.subplots(8, 7,figsize=(48,27))
-#for i, state in enumerate(zipByCount.STATE.unique()):
-#    stateData = zipByCount.loc[zipByCount['STATE']==state]
-#    stateCount = stateData['brewery count'].values
-#    sns.distplot(stateCount, kde=False, bins=range(0,10), norm_hist=True, ax=statePlots[int(i/7), i%7]).set(xlim=(0,10),ylim=(0,1))
-#    statePlots[int(i/7), i%7].set_title(state)
-#    
-#countHist = zipByCount['brewery count'].values
-#f.savefig("foo.png")
-#
-#plt.figure()
-#sns.distplot(countHist, kde=False, bins=range(0,10), norm_hist=True).set(xlim=(0,10),ylim=(0,1))
-#plt.title("United States")
-
-
-    
 
 

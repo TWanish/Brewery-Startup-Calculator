@@ -15,7 +15,7 @@ def getCity(cityName, state, df):
     cityChoices = df[df['PO_NAME']==cityName]
     cityChoices = cityChoices[cityChoices['STATE']==state]
     grouped = cityChoices.groupby('PO_NAME').agg({
-            'STATE':'min', 'ZCTA':'max', 'brewery_count':'sum', 'popDrinking': 'sum',
+            'STATE':'min', 'ZCTA':'max', 'county':'max', 'brewery_count':'sum', 'popDrinking': 'sum',
             'median_income':'mean', 'purchase_power':'mean',
             'land_area_sqmi':'sum', 'brewery_capacity':'sum'})
     tC= groupCities(df)
@@ -56,7 +56,24 @@ def getZip(zipCode, df):
 
 def groupCities(df):
     tC = df.groupby(['PO_NAME', 'STATE']).agg({
-            'ZCTA':'max', 'brewery_count':'sum', 'popDrinking': 'sum',
+            'ZCTA':'max', 'county':'max', 'brewery_count':'sum', 'popDrinking': 'sum',
+            'median_income':'mean', 'purchase_power':'mean',
+            'land_area_sqmi': 'sum', 'brewery_capacity':'sum'})
+    tC['brewery_density']=tC['brewery_count']/tC['land_area_sqmi']
+    tC['tot_market_cap']=tC['popDrinking']*tC['purchase_power']
+    tC['carrying_cap_ratio']=tC['brewery_capacity']/(
+        1+((tC['brewery_capacity']-(tC['brewery_count']+1))/(tC['brewery_count']+1)))
+    tC['carrying_cap_ratio']=(tC['brewery_capacity']-np.abs(
+            tC['brewery_capacity']-tC['carrying_cap_ratio']
+            ))/tC['brewery_capacity']
+    tC=tC.fillna(0.5)
+    tC['share_market_cap']=tC['tot_market_cap']*tC['carrying_cap_ratio']
+    tC['split_market_cap']=tC['tot_market_cap']/(tC['brewery_count']+1)
+    return tC
+
+def groupCounties(df):
+    tC = df.groupby(['county']).agg({
+            'PO_NAME':'max', 'STATE':'max', 'brewery_count':'sum', 'popDrinking': 'sum',
             'median_income':'mean', 'purchase_power':'mean',
             'land_area_sqmi': 'sum', 'brewery_capacity':'sum'})
     tC['brewery_density']=tC['brewery_count']/tC['land_area_sqmi']
