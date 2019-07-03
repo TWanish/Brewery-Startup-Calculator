@@ -28,17 +28,17 @@ for p in paths:
     if p['id'] not in ["State_Lines", "separator"]:
         # pass
         try:
-            marketCap = countyData[countyData['county']==int(p['id'].split('_')[1])]['split_market_cap'].values[0]
+            marketCap = countyData[countyData['county']==int(p['id'].split('_')[1])]['share_market_cap'].values[0]
         except:
             continue
 
-        if marketCap > countyData['split_market_cap'].quantile(.89):
+        if marketCap > countyData['share_market_cap'].quantile(.8):
             color_class = 4
-        elif marketCap > countyData['split_market_cap'].quantile(.78):
+        elif marketCap > countyData['share_market_cap'].quantile(.6):
             color_class = 3
-        elif marketCap > countyData['split_market_cap'].quantile(.67):
+        elif marketCap > countyData['share_market_cap'].quantile(.4):
             color_class = 2
-        elif marketCap > countyData['split_market_cap'].quantile(.56):
+        elif marketCap > countyData['share_market_cap'].quantile(.2):
             color_class = 1
         else:
             color_class = 0
@@ -46,7 +46,7 @@ for p in paths:
         color = colors[color_class]
         p['style'] = path_style + color
         
-output = open(os.path.normpath(str(os.getcwd()).split('lib')[0]+'/graphics/split_market_cap.svg'), "w")
+output = open(os.path.normpath(str(os.getcwd()).split('lib')[0]+'/graphics/share_market_cap.svg'), "w")
 output.write(soup.prettify())
 output.close()
 
