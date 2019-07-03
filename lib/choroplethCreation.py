@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 
 path = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/countyData.csv')
 countyData = pd.read_csv(path, engine='python')
-path = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/USA_Counties_with_FIPS_and_names.svg')
+path = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/graphics/USA_Counties_with_FIPS_and_names.svg')
 svg = open(path, 'r').read()
 soup = BeautifulSoup(svg, selfClosingTags=['defs','sodipodi:namedview'], features='lxml')
 # Find counties
@@ -28,17 +28,17 @@ for p in paths:
     if p['id'] not in ["State_Lines", "separator"]:
         # pass
         try:
-            marketCap = countyData[countyData['county']==int(p['id'].split('_')[1])]['brewery_per_capita'].values[0]
+            marketCap = countyData[countyData['county']==int(p['id'].split('_')[1])]['split_market_cap'].values[0]
         except:
             continue
 
-        if marketCap > countyData['brewery_per_capita'].quantile(.89):
+        if marketCap > countyData['split_market_cap'].quantile(.89):
             color_class = 4
-        elif marketCap > countyData['brewery_per_capita'].quantile(.78):
+        elif marketCap > countyData['split_market_cap'].quantile(.78):
             color_class = 3
-        elif marketCap > countyData['brewery_per_capita'].quantile(.67):
+        elif marketCap > countyData['split_market_cap'].quantile(.67):
             color_class = 2
-        elif marketCap > countyData['brewery_per_capita'].quantile(.56):
+        elif marketCap > countyData['split_market_cap'].quantile(.56):
             color_class = 1
         else:
             color_class = 0
@@ -46,7 +46,7 @@ for p in paths:
         color = colors[color_class]
         p['style'] = path_style + color
         
-output = open("brewery_per_capita.svg", "w")
+output = open(os.path.normpath(str(os.getcwd()).split('lib')[0]+'/graphics/split_market_cap.svg'), "w")
 output.write(soup.prettify())
 output.close()
 

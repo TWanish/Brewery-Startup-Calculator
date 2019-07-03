@@ -101,9 +101,8 @@ tC = groupCounties(impInfo).reset_index()
 tC['share_market_cap']=tC['share_market_cap'].astype(int)
 tC['split_market_cap']=tC['split_market_cap'].astype(int)
 tC['brewery_per_capita']=tC['brewery_count']/tC['popDrinking'].fillna(0).replace(np.inf,0)
-print(tC[tC['STATE']=='AK'].sort_values('brewery_per_capita').tail(25))
 #print(tC.sort_values('split_market_cap').tail())
-#tC.to_csv('countyData.csv')
+tC.to_csv(os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/countyData.csv'))
 
 
 #impInfo=impInfo[impInfo['brewery_capacity']>impInfo.brewery_count.astype(int)] #remove any city that has already hit their carrying capacity
