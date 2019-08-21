@@ -11,7 +11,6 @@ from dataPlayground import getZip, getCity, groupCities, groupCounties
 pd.set_option('display.max_columns', 15)
 try:
     path = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/breweryData.json')
-    path = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/breweryData.json')
 except:
     print('path not found')
 
@@ -101,7 +100,7 @@ tC = groupCounties(impInfo).reset_index()
 tC['share_market_cap']=tC['share_market_cap'].astype(int)
 tC['split_market_cap']=tC['split_market_cap'].astype(int)
 tC['brewery_per_capita']=tC['brewery_count']/tC['popDrinking'].fillna(0).replace(np.inf,0)
-#print(tC.sort_values('split_market_cap').tail())
+
 tC.to_csv(os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/countyData.csv'))
 
 
