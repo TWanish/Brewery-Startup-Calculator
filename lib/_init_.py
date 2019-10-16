@@ -1,8 +1,5 @@
 import pandas as pd
 import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
-import geopandas as gpd
 import os
 from tableCreation import joinZip, joinData
 from dataPlayground import getZip, getCity, groupCities, groupCounties
@@ -61,7 +58,7 @@ pathHousing = os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/medianHou
 housing = pd.read_csv(pathHousing, engine='python').rename(columns = {'GEO.id2' : 'ZCTA',
                                                                     'HD01_VD01' : 'median_housing'})
 
-### Determine best location 
+### Determine best location
 withLand = joinData(withIncome, landData[['ZCTA', 'land_area_sqmi']]).fillna(0) #Join here to not lose data
 withCounty = joinData(withLand, countyCW).fillna(0)
 withCounty['county']= withCounty['county'].astype(int)
@@ -85,9 +82,9 @@ withHousing['share_market_cap']=withHousing['tot_market_cap']*withHousing['carry
 withHousing['split_market_cap']=withHousing['tot_market_cap']/(
         withHousing['brewery_count']+1)
 
-impInfo = withHousing[['PO_NAME', 'STATE', 'ZCTA', 'county', 'popDrinking', 'brewery_count', 
-                       'median_income', 'purchase_power', 'land_area_sqmi', 
-                       'brewery_capacity', 'carrying_cap_ratio', 'share_market_cap', 
+impInfo = withHousing[['PO_NAME', 'STATE', 'ZCTA', 'county', 'popDrinking', 'brewery_count',
+                       'median_income', 'purchase_power', 'land_area_sqmi',
+                       'brewery_capacity', 'carrying_cap_ratio', 'share_market_cap',
                        'split_market_cap']].fillna(0).replace(np.inf,0)
 
 
@@ -105,6 +102,3 @@ tC.to_csv(os.path.normpath(str(os.getcwd()).split('lib')[0]+'/data/countyData.cs
 
 
 #impInfo=impInfo[impInfo['brewery_capacity']>impInfo.brewery_count.astype(int)] #remove any city that has already hit their carrying capacity
-
-
-
